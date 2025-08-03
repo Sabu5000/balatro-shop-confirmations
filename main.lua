@@ -204,8 +204,8 @@ end
 G.FUNCS.tx_continue_action = function()
 	if confirm_transaction_action then
 		confirm_transaction_action()
+		G.FUNCS.exit_overlay_menu()
 	end
-	G.FUNCS.exit_overlay_menu()
 	confirm_transaction_action = nil
 end
 
@@ -224,13 +224,21 @@ end
 local original_buy_from_shop = G.FUNCS.buy_from_shop
 local original_sell_card = G.FUNCS.sell_card
 
--- Hook buy function
+-- Hook buy function (handles both regular purchases and booster packs)
 G.FUNCS.buy_from_shop = function(e)
 	local card = e.config.ref_table
 	local cost_text = card.cost and card.cost > 0 and ("Cost: $" .. card.cost) or ""
 	
+	-- Determine action text based on card type
+	local action_text = "Purchase this item?"
+	if card.ability and card.ability.set == 'Booster' then
+		action_text = "Open this pack?"
+	elseif card.ability and card.ability.set == 'Voucher' then
+		action_text = "Redeem this voucher?"
+	end
+	
 	show_transaction_confirmation(
-		"Purchase this item?",
+		action_text,
 		cost_text,
 		function()
 			original_buy_from_shop(e)
