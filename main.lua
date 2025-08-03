@@ -220,42 +220,38 @@ local function show_transaction_confirmation(action_text, details, confirm_callb
 	G.FUNCS.overlay_menu({definition = G.UIDEF.transaction_confirmation_box(action_text, details)})
 end
 
--- Store original functions - will need to find the correct function names
--- Common possibilities: buy_from_shop, purchase_card, sell_card, etc.
--- For now, I'll use placeholder names and we can adjust based on testing
+-- Store original functions
+local original_buy_from_shop = G.FUNCS.buy_from_shop
+local original_sell_card = G.FUNCS.sell_card
 
--- Hook buy function (placeholder - need to find actual function name)
-if G.FUNCS.buy_from_shop then
-	local original_buy_from_shop = G.FUNCS.buy_from_shop
-	G.FUNCS.buy_from_shop = function(e, ...)
-		local args = {...}
-		show_transaction_confirmation(
-			"Purchase this item?",
-			"",
-			function()
-				original_buy_from_shop(e, unpack(args))
-			end
-		)
-	end
+-- Hook buy function
+G.FUNCS.buy_from_shop = function(e)
+	local card = e.config.ref_table
+	local cost_text = card.cost and card.cost > 0 and ("Cost: $" .. card.cost) or ""
+	
+	show_transaction_confirmation(
+		"Purchase this item?",
+		cost_text,
+		function()
+			original_buy_from_shop(e)
+		end
+	)
 end
 
--- Hook sell function (placeholder - need to find actual function name)
-if G.FUNCS.sell_card then
-	local original_sell_card = G.FUNCS.sell_card
-	G.FUNCS.sell_card = function(e, ...)
-		local args = {...}
-		show_transaction_confirmation(
-			"Sell this card?",
-			"This action cannot be undone",
-			function()
-				original_sell_card(e, unpack(args))
-			end
-		)
-	end
+-- Hook sell function  
+G.FUNCS.sell_card = function(e)
+	local card = e.config.ref_table
+	local sell_value = card.sell_cost or 1
+	local sell_text = "Sell for $" .. sell_value
+	
+	show_transaction_confirmation(
+		"Sell this card?",
+		sell_text,
+		function()
+			original_sell_card(e)
+		end
+	)
 end
-
--- Alternative approach: Hook common click functions that might handle transactions
--- We can try hooking Card:click() or use_card() functions and check context
 
 print("Balatro Transaction Confirmations mod loaded - v1.0.0")
-print("Note: Function hooks may need adjustment based on actual Balatro function names")
+print("Successfully hooked G.FUNCS.buy_from_shop and G.FUNCS.sell_card")
